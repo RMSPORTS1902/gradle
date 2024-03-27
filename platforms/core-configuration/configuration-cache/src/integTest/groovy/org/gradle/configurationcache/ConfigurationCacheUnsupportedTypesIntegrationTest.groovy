@@ -178,7 +178,7 @@ class ConfigurationCacheUnsupportedTypesIntegrationTest extends AbstractConfigur
         problems.assertResultHasProblems(result) {
             withTotalProblemsCount(1)
             withUniqueProblems(
-                "Plugin class 'MyPlugin': accessing non-serializable type '${serviceType.name}'"
+                "Build file 'build.gradle': line 14: accessing non-serializable type '${serviceType.name}'"
             )
         }
 
