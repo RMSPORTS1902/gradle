@@ -1,4 +1,6 @@
 plugins {
+    id("com.google.gms.google-services")
+    id("com.android.application")
     id("gradlebuild.build-environment")
     id("gradlebuild.root-build")
 
@@ -14,6 +16,8 @@ plugins {
 description = "Adaptable, fast automation for all"
 
 dependencyAnalysis {
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     issues {
         all {
             ignoreSourceSet("archTest", "crossVersionTest", "docsTest", "integTest", "jmh", "peformanceTest", "smokeTest", "testInterceptors", "testFixtures", "smokeIdeTest")
