@@ -183,11 +183,12 @@ import org.gradle.internal.buildtree.BuildModelParameters;
 import org.gradle.internal.classloader.ClassLoaderFactory;
 import org.gradle.internal.classpath.CachedClasspathTransformer;
 import org.gradle.internal.classpath.transforms.ClasspathElementTransformFactoryForLegacy;
+import org.gradle.internal.cleanup.DefaultBuildOutputCleanupRegistry;
 import org.gradle.internal.code.UserCodeApplicationContext;
 import org.gradle.internal.composite.DefaultBuildIncluder;
 import org.gradle.internal.concurrent.ExecutorFactory;
-import org.gradle.internal.event.DefaultListenerManager;
 import org.gradle.internal.event.ListenerManager;
+import org.gradle.internal.event.ScopedListenerManager;
 import org.gradle.internal.execution.ExecutionEngine;
 import org.gradle.internal.execution.InputFingerprinter;
 import org.gradle.internal.execution.WorkExecutionTracker;
@@ -201,6 +202,7 @@ import org.gradle.internal.isolation.IsolatableFactory;
 import org.gradle.internal.jvm.JavaModuleDetector;
 import org.gradle.internal.logging.LoggingManagerInternal;
 import org.gradle.internal.logging.sink.OutputEventListenerManager;
+import org.gradle.internal.model.CalculatedValueFactory;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.operations.BuildOperationProgressEventEmitter;
 import org.gradle.internal.operations.BuildOperationRunner;
@@ -236,7 +238,7 @@ import java.util.List;
 public class BuildScopeServices extends ScopedServiceRegistry {
 
     public BuildScopeServices(ServiceRegistry parent, BuildModelControllerServices.Supplier supplier) {
-        super(Scope.Build.class, parent);
+        super(Scope.Build.class, "build-scope services", parent);
         addProvider(new BuildCacheServices());
         register(registration -> {
             registration.add(DefaultExecOperations.class);
@@ -255,6 +257,7 @@ public class BuildScopeServices extends ScopedServiceRegistry {
             registration.add(DefaultBuildIncluder.class);
             registration.add(DefaultScriptClassPathResolver.class);
             registration.add(DefaultScriptHandlerFactory.class);
+            registration.add(DefaultBuildOutputCleanupRegistry.class);
             supplier.applyServicesTo(registration, this);
             for (PluginServiceRegistry pluginServiceRegistry : parent.getAll(PluginServiceRegistry.class)) {
                 pluginServiceRegistry.registerBuildServices(registration);
@@ -344,7 +347,7 @@ public class BuildScopeServices extends ScopedServiceRegistry {
         return new DefaultTextFileResourceLoader(resolver);
     }
 
-    protected DefaultListenerManager createListenerManager(DefaultListenerManager listenerManager) {
+    protected ScopedListenerManager createListenerManager(ScopedListenerManager listenerManager) {
         return listenerManager.createChild(Scope.Build.class);
     }
 
@@ -398,13 +401,15 @@ public class BuildScopeServices extends ScopedServiceRegistry {
         ServiceRegistry services,
         GradleProperties gradleProperties,
         ExecFactory execFactory,
-        ListenerManager listenerManager
+        ListenerManager listenerManager,
+        CalculatedValueFactory calculatedValueFactory
     ) {
         return new DefaultValueSourceProviderFactory(
             listenerManager,
             instantiatorFactory,
             isolatableFactory,
             gradleProperties,
+            calculatedValueFactory,
             new DefaultExecOperations(execFactory.forContext().withoutExternalProcessStartedListener().build()),
             services
         );
